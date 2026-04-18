@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İnşaat ve İşletme Takip</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    },
+                    borderRadius: {
+                        '2xl': '1rem',
+                        '3xl': '1.5rem',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-black transition-colors duration-200">
+    <div id="app" class="min-h-screen flex flex-col lg:flex-row">
+        <!-- Sidebar (Desktop) / Hamburger Menu (Mobile) -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 transform -translate-x-full transition-transform lg:translate-x-0 lg:static lg:block hidden">
+            <div class="p-6 h-full flex flex-col">
+                <div class="flex items-center mb-8">
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-3">
+                        <i data-lucide="trending-up" class="text-white w-6 h-6"></i>
+                    </div>
+                    <h1 class="font-bold text-xl text-gray-900 dark:text-white">İnşaat Takip</h1>
+                </div>
+                <nav class="flex-1 space-y-1">
+                    <button onclick="switchTab('dashboard')" class="nav-link flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400" data-tab="dashboard">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Ana Panel
+                    </button>
+                    <button onclick="switchTab('budget_details')" class="nav-link flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" data-tab="budget_details">
+                        <i data-lucide="wallet" class="w-5 h-5 mr-3"></i> Bütçe Detayları
+                    </button>
+                    <button onclick="switchTab('tasks')" class="nav-link flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" data-tab="tasks">
+                        <i data-lucide="check-square" class="w-5 h-5 mr-3"></i> Yapılacaklar
+                    </button>
+                    <button onclick="switchTab('shopping')" class="nav-link flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" data-tab="shopping">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i> Alınacaklar
+                    </button>
+                    <button onclick="switchTab('expenses')" class="nav-link flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" data-tab="expenses">
+                        <i data-lucide="receipt" class="w-5 h-5 mr-3"></i> Gider Takibi
+                    </button>
+                    <button onclick="switchTab('suppliers')" class="nav-link flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" data-tab="suppliers">
+                        <i data-lucide="users" class="w-5 h-5 mr-3"></i> Tedarikçiler
+                    </button>
+                    <button onclick="switchTab('settings')" class="nav-link flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" data-tab="settings">
+                        <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Ayarlar
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Mobile Header -->
+        <header class="lg:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                    <i data-lucide="trending-up" class="text-white w-5 h-5"></i>
+                </div>
+                <h1 class="font-bold text-gray-900 dark:text-white">İnşaat Takip</h1>
+            </div>
+            <button onclick="toggleSidebar()" class="p-2 text-gray-600 dark:text-gray-400">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 lg:p-8 max-w-5xl mx-auto w-full pb-24 lg:pb-8">
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="tab-view space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center space-x-4">
+                        <div class="p-3 rounded-xl bg-blue-500"><i data-lucide="wallet" class="w-6 h-6 text-white"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Toplam Bütçe</p>
+                            <p id="stat-total-budget" class="text-xl font-bold text-gray-900 dark:text-white">0 ₺</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center space-x-4">
+                        <div class="p-3 rounded-xl bg-emerald-500"><i data-lucide="trending-up" class="w-6 h-6 text-white"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Harcanan</p>
+                            <p id="stat-spent" class="text-xl font-bold text-gray-900 dark:text-white">0 ₺</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center space-x-4">
+                        <div class="p-3 rounded-xl bg-amber-500" id="stat-remaining-color"><i data-lucide="refresh-ccw" class="w-6 h-6 text-white"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Kalan Bütçe</p>
+                            <p id="stat-remaining" class="text-xl font-bold text-gray-900 dark:text-white">0 ₺</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Harcama Dağılımı</h3>
+                        <div class="h-64 relative">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">İş İlerlemesi</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p id="task-progress-text" class="text-3xl font-bold text-gray-900 dark:text-white">0 / 0</p>
+                                    <p class="text-sm text-gray-500">Tamamlanan Görevler</p>
+                                </div>
+                                <div class="text-right">
+                                    <p id="task-progress-percent" class="text-lg font-semibold text-blue-600">0%</p>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3">
+                                <div id="task-progress-bar" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <div class="pt-4 space-y-2">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Yaklaşan Görevler</p>
+                                <div id="upcoming-tasks" class="space-y-2">
+                                    <!-- Upcoming tasks injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-budget_details" class="tab-view hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold dark:text-white">Bütçe Detayları</h2>
+                    <button onclick="openModal('add_category')" class="bg-blue-600 text-white p-2 rounded-xl shadow-md hover:bg-blue-700 transition-transform active:scale-95">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <!-- Total Budget Summary Card -->
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-blue-100 text-xs font-semibold uppercase tracking-wider">Genel Bütçe Durumu</p>
+                            <h3 id="budget-summary-total" class="text-3xl font-black mt-1">0 ₺</h3>
+                        </div>
+                        <i data-lucide="pie-chart" class="w-8 h-8 opacity-40"></i>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-white/10">
+                        <div>
+                            <p class="text-blue-200 text-[10px] uppercase font-bold">Harcanan</p>
+                            <p id="budget-summary-spent" class="text-lg font-bold">0 ₺</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-blue-200 text-[10px] uppercase font-bold">Kalan</p>
+                            <p id="budget-summary-remaining" class="text-lg font-bold">0 ₺</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="budget-categories-list" class="grid grid-cols-1 gap-4">
+                    <!-- Categories and their specific expenses/shopping items will be here -->
+                </div>
+            </div>
+
+            <!-- Tasks View -->
+            <div id="view-tasks" class="tab-view hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold dark:text-white">Yapılacaklar</h2>
+                    <button onclick="openModal('task')" class="bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-transform active:scale-95">
+                        <i data-lucide="plus" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div id="tasks-list" class="space-y-3">
+                    <!-- Tasks injected here -->
+                </div>
+            </div>
+
+            <!-- Shopping View -->
+            <div id="view-shopping" class="tab-view hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold dark:text-white">Alınacaklar</h2>
+                    <div class="flex items-center space-x-2">
+                        <button id="shopping-filter-btn" onclick="toggleShoppingFilter()" class="p-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-500 transition-colors">
+                            Alınanları Gizle
+                        </button>
+                        <button onclick="openModal('shopping')" class="bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-transform active:scale-95">
+                            <i data-lucide="plus" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="shopping-list" class="space-y-3">
+                    <!-- Shopping items injected here -->
+                </div>
+            </div>
+
+            <!-- Expenses View -->
+            <div id="view-expenses" class="tab-view hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold dark:text-white">Gider Takibi</h2>
+                    <button onclick="openModal('expense')" class="bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-transform active:scale-95">
+                        <i data-lucide="plus" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div class="bg-blue-600 text-white p-4 rounded-2xl shadow-md mb-4">
+                    <p class="text-sm opacity-80">Toplam Harcama</p>
+                    <p id="total-spent-display" class="text-3xl font-bold">0 ₺</p>
+                </div>
+                <div id="expenses-list" class="space-y-3">
+                    <!-- Expenses injected here -->
+                </div>
+            </div>
+
+            <!-- Suppliers View -->
+            <div id="view-suppliers" class="tab-view hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold dark:text-white">Tedarikçiler</h2>
+                    <button onclick="openModal('supplier')" class="bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-transform active:scale-95">
+                        <i data-lucide="plus" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div id="suppliers-list" class="grid grid-cols-1 gap-3">
+                    <!-- Suppliers injected here -->
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="view-settings" class="tab-view hidden space-y-6">
+                <h2 class="text-xl font-bold dark:text-white">Ayarlar</h2>
+                <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
+                    <!-- Theme Section -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-4">
+                                <i data-lucide="moon" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold dark:text-white text-sm">Karanlık Tema</p>
+                                <p class="text-xs text-gray-500">Uygulama görünümünü değiştirin</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleTheme()" id="theme-toggle" class="w-12 h-6 bg-gray-200 rounded-full relative transition-colors duration-200">
+                            <div id="theme-toggle-dot" class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200"></div>
+                        </button>
+                    </div>
+
+                    <!-- Backup Section -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Veri Yönetimi</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button onclick="exportData()" class="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all active:scale-95">
+                                <i data-lucide="download" class="w-5 h-5 mr-3"></i>
+                                <span class="font-bold text-sm">Yedek Al</span>
+                            </button>
+                            <label class="flex items-center p-4 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-2xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all active:scale-95 cursor-pointer text-center justify-center sm:justify-start">
+                                <i data-lucide="upload" class="w-5 h-5 mr-3"></i>
+                                <span class="font-bold text-sm">Yedek Yükle</span>
+                                <input type="file" accept=".json" onchange="importData(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+                        <h3 class="text-xs font-black text-red-400 uppercase tracking-widest pl-1 mb-3">Tehlikeli Bölge</h3>
+                        <button onclick="resetData()" class="flex items-center justify-center w-full p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-all active:scale-95">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 mr-3"></i>
+                            <span class="font-bold text-sm">Tüm Verileri Sıfırla</span>
+                        </button>
+                        <p class="text-[10px] text-gray-500 text-center mt-3">Bu işlem geri alınamaz. Lütfen yedek aldığınızdan emin olun.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-100 dark:border-gray-800 px-6 py-3 flex justify-between items-center z-40">
+            <button onclick="switchTab('dashboard')" class="nav-btn p-2 text-blue-600" data-tab="dashboard"><i data-lucide="layout-dashboard" class="w-6 h-6"></i></button>
+            <button onclick="switchTab('budget_details')" class="nav-btn p-2 text-gray-400" data-tab="budget_details"><i data-lucide="wallet" class="w-6 h-6"></i></button>
+            <button onclick="switchTab('shopping')" class="nav-btn p-2 text-gray-400" data-tab="shopping"><i data-lucide="clipboard-list" class="w-6 h-6"></i></button>
+            <button onclick="switchTab('expenses')" class="nav-btn p-2 text-gray-400" data-tab="expenses"><i data-lucide="receipt" class="w-6 h-6"></i></button>
+            <button onclick="switchTab('settings')" class="nav-btn p-2 text-gray-400" data-tab="settings"><i data-lucide="settings" class="w-6 h-6"></i></button>
+        </nav>
+
+        <!-- Modal Backdrop -->
+        <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+            <div class="bg-white dark:bg-gray-900 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
+                <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                    <h3 id="modal-title" class="text-xl font-bold dark:text-white">Başlık</h3>
+                    <button onclick="closeModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"><i data-lucide="x" class="w-6 h-6 dark:text-gray-400"></i></button>
+                </div>
+                <div id="modal-content" class="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+                    <!-- Modal content injected here -->
+                </div>
+                <div class="p-6 bg-gray-50 dark:bg-gray-800/50 flex space-x-3">
+                    <button onclick="closeModal()" class="flex-1 p-3 text-gray-600 dark:text-gray-400 font-medium">İptal</button>
+                    <button id="modal-save-btn" class="flex-1 p-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const INITIAL_DATA = {
+            tasks: [],
+            shoppingList: [],
+            expenses: [],
+            suppliers: [],
+            budget: {
+                total: 1000000,
+                categories: {
+                    'İnşaat': 500000,
+                    'Ruhsat': 50000,
+                    'Dekorasyon': 200000,
+                    'Ekipman': 150000,
+                    'Personel': 100000
+                }
+            },
+            theme: 'light'
+        };
+
+        let data = JSON.parse(localStorage.getItem('insaat_takip_data')) || INITIAL_DATA;
+        let activeTab = 'dashboard';
+        let editingItem = null;
+        let selectedCategory = null;
+        let hidePurchased = false;
+        let chart = null;
+
+        function getCategories() {
+            return Object.keys(data.budget.categories);
+        }
+        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
+
+        // --- Core Functions ---
+        function saveData() {
+            localStorage.setItem('insaat_takip_data', JSON.stringify(data));
+            render();
+        }
+
+        function switchTab(tabId) {
+            const view = document.getElementById(`view-${tabId}`);
+            if (!view) {
+                console.error(`View not found: view-${tabId}`);
+                return;
+            }
+
+            activeTab = tabId;
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
+            view.classList.remove('hidden');
+            
+            // Update Nav Links UI
+            document.querySelectorAll('.nav-link, .nav-btn').forEach(link => {
+                const isActive = link.dataset.tab === tabId;
+                
+                if (isActive) {
+                    link.classList.add('text-blue-600', 'bg-blue-50', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+                    link.classList.remove('text-gray-600', 'text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+                } else {
+                    link.classList.remove('text-blue-600', 'bg-blue-50', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+                    link.classList.add('text-gray-600', 'text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+                }
+            });
+
+            render();
+            closeSidebar();
+        }
+
+        function toggleTheme() {
+            data.theme = data.theme === 'light' ? 'dark' : 'light';
+            applyTheme();
+            saveData();
+        }
+
+        function applyTheme() {
+            if (data.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-toggle')?.classList.add('bg-blue-600');
+                document.getElementById('theme-toggle')?.classList.remove('bg-gray-200');
+                document.getElementById('theme-toggle-dot')?.classList.add('translate-x-6');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-toggle')?.classList.remove('bg-blue-600');
+                document.getElementById('theme-toggle')?.classList.add('bg-gray-200');
+                document.getElementById('theme-toggle-dot')?.classList.remove('translate-x-6');
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('hidden');
+                sidebar.classList.toggle('-translate-x-full');
+            }
+        }
+
+        function closeSidebar() {
+            if (window.innerWidth < 1024) { // Only for mobile
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    sidebar.classList.add('hidden', '-translate-x-full');
+                }
+            }
+        }
+
+        // --- Data Actions ---
+        function updateBudgetTotal(val) {
+            data.budget.total = Number(val);
+            saveData();
+        }
+
+        function resetData() {
+            if (confirm('Tüm veriler silinecek. Emin misiniz?')) {
+                data = JSON.parse(JSON.stringify(INITIAL_DATA));
+                saveData();
+            }
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `insaat_takip_yedek_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    data = JSON.parse(e.target.result);
+                    saveData();
+                    alert('Veriler başarıyla yüklendi.');
+                } catch (err) {
+                    alert('Geçersiz dosya formatı.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Rendering ---
+        function render() {
+            if (activeTab === 'dashboard') renderDashboard();
+            if (activeTab === 'budget_details') renderBudgetDetails();
+            if (activeTab === 'tasks') renderTasks();
+            if (activeTab === 'shopping') renderShopping();
+            if (activeTab === 'expenses') renderExpenses();
+            if (activeTab === 'suppliers') renderSuppliers();
+            if (activeTab === 'settings') applyTheme(); // Sync toggle state
+            lucide.createIcons();
+        }
+
+        function renderDashboard() {
+            const totalSpent = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const totalBudget = Object.values(data.budget.categories).reduce((sum, val) => sum + val, 0);
+            const remaining = totalBudget - totalSpent;
+            const progress = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
+            document.getElementById('stat-total-budget').innerText = totalBudget.toLocaleString() + ' ₺';
+            document.getElementById('stat-spent').innerText = totalSpent.toLocaleString() + ' ₺';
+            document.getElementById('stat-remaining').innerText = remaining.toLocaleString() + ' ₺';
+            
+            const remainingColor = document.getElementById('stat-remaining-color');
+            if (remainingColor) {
+                if (remaining < 0) {
+                    remainingColor.classList.replace('bg-amber-500', 'bg-red-500');
+                } else {
+                    remainingColor.classList.replace('bg-red-500', 'bg-amber-500');
+                }
+            }
+
+            // Task Progress
+            const completedTasks = data.tasks.filter(t => t.status === 'completed').length;
+            const totalTasks = data.tasks.length;
+
+            const taskPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            document.getElementById('task-progress-text').innerText = `${completedTasks} / ${totalTasks}`;
+            document.getElementById('task-progress-percent').innerText = `${taskPercent}%`;
+            document.getElementById('task-progress-bar').style.width = `${Math.min(taskPercent, 100)}%`;
+
+            // Upcoming Tasks
+            const upcomingHtml = data.tasks.filter(t => t.status !== 'completed').slice(0, 3).map(t => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 rounded-full mr-3 ${t.priority === 'high' ? 'bg-red-500' : t.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'}"></div>
+                        <span class="text-sm font-medium dark:text-gray-200">${t.title}</span>
+                    </div>
+                    <span class="text-xs text-gray-400">${t.dueDate || ''}</span>
+                </div>
+            `).join('');
+            document.getElementById('upcoming-tasks').innerHTML = upcomingHtml || '<p class="text-xs text-gray-400 italic">Bekleyen görev yok</p>';
+
+            // Chart
+            renderChart();
+        }
+
+        function renderChart() {
+            const chartCanvas = document.getElementById('expenseChart');
+            if (!chartCanvas) return;
+            const ctx = chartCanvas.getContext('2d');
+            const map = {};
+            data.expenses.forEach(e => {
+                map[e.category] = (map[e.category] || 0) + e.amount;
+            });
+            const labels = Object.keys(map);
+            const values = Object.values(map);
+
+            if (chart) chart.destroy();
+            
+            if (labels.length === 0) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.font = "14px Inter";
+                ctx.fillStyle = "#999";
+                ctx.textAlign = "center";
+                ctx.fillText("Henüz veri yok", ctx.canvas.width/2, ctx.canvas.height/2);
+                return;
+            }
+
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: COLORS,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: data.theme === 'dark' ? '#fff' : '#666' } }
+                    }
+                }
+            });
+        }
+
+        function renderBudgetDetails() {
+            const list = document.getElementById('budget-categories-list');
+            const stats = {};
+            
+            // Initialize with categories
+            Object.entries(data.budget.categories).forEach(([cat, planned]) => {
+                stats[cat] = { planned, actual: 0, expenses: [], shopping: [] };
+            });
+            
+            // Collect expenses
+            data.expenses.forEach(exp => {
+                if (!stats[exp.category]) stats[exp.category] = { planned: 0, actual: 0, expenses: [], shopping: [] };
+                stats[exp.category].actual += exp.amount;
+                stats[exp.category].expenses.push(exp);
+            });
+
+            // Collect shopping items
+            data.shoppingList.forEach(item => {
+                if (!stats[item.category]) stats[item.category] = { planned: 0, actual: 0, expenses: [], shopping: [] };
+                stats[item.category].shopping.push(item);
+            });
+
+            // Summary Stats
+            const totalPlanned = Object.values(data.budget.categories).reduce((sum, v) => sum + v, 0);
+            const totalActual = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('budget-summary-total').innerText = totalPlanned.toLocaleString() + ' ₺';
+            document.getElementById('budget-summary-spent').innerText = totalActual.toLocaleString() + ' ₺';
+            document.getElementById('budget-summary-remaining').innerText = (totalPlanned - totalActual).toLocaleString() + ' ₺';
+
+            list.innerHTML = Object.entries(stats).map(([cat, s]) => {
+                const percent = s.planned > 0 ? (s.actual / s.planned) * 100 : 0;
+                const isOver = s.actual > s.planned;
+                const isExpanded = selectedCategory === cat;
+
+                return `
+                    <div class="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 transition-all overflow-hidden ${isExpanded ? 'ring-2 ring-blue-500/20' : ''}">
+                        <div class="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors" onclick="toggleCategoryDetails('${cat}')">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="font-bold text-xl dark:text-white mb-1">${cat}</h3>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full ${isOver ? 'bg-red-100 text-red-600 dark:bg-red-900/30' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30'} font-bold">
+                                            %${Math.round(percent)} Kullanıldı
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="event.stopPropagation(); openModal('edit_category', '${cat}')" 
+                                            class="p-2.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all shadow-sm active:scale-90">
+                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); deleteCategory('${cat}')" 
+                                            class="p-2.5 bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-all shadow-sm active:scale-90">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                    <div class="ml-2">
+                                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <p class="text-[10px] text-gray-400 uppercase font-bold">Harcanan</p>
+                                        <p class="text-lg font-bold dark:text-white">${s.actual.toLocaleString()} ₺</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] text-gray-400 uppercase font-bold">Bütçe</p>
+                                        <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">${s.planned.toLocaleString()} ₺</p>
+                                    </div>
+                                </div>
+                                <div class="relative w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="absolute inset-y-0 left-0 transition-all duration-700 ease-out ${isOver ? 'bg-red-500' : 'bg-blue-600'}" style="width: ${Math.min(percent, 100)}%"></div>
+                                </div>
+                                ${isOver ? `<p class="text-[10px] text-red-500 font-bold flex items-center"><i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i> Bütçe ${(s.actual - s.planned).toLocaleString()} ₺ aşıldı!</p>` : ''}
+                            </div>
+                        </div>
+
+                        ${isExpanded ? `
+                            <div class="bg-gray-50/50 dark:bg-gray-800/20 border-t border-gray-100 dark:border-gray-800 p-6 space-y-6">
+                                <!-- Expenses From Gider Takibi -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Giderler (Harcamalar)</h4>
+                                        <span class="text-[10px] bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full dark:text-gray-300">${s.expenses.length} Kayıt</span>
+                                    </div>
+                                    ${s.expenses.length > 0 ? `
+                                        <div class="space-y-2">
+                                            ${s.expenses.sort((a,b) => new Date(b.date) - new Date(a.date)).map(exp => `
+                                                <div class="bg-white dark:bg-gray-900 p-3 rounded-2xl flex justify-between items-center shadow-sm border border-gray-50 dark:border-gray-800">
+                                                    <div>
+                                                        <p class="text-sm font-bold dark:text-white">${exp.description}</p>
+                                                        <p class="text-[10px] text-gray-500">${exp.date}</p>
+                                                    </div>
+                                                    <p class="text-sm font-black text-gray-900 dark:text-white">-${exp.amount.toLocaleString()} ₺</p>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : '<p class="text-xs text-gray-400 italic py-2">Henüz gider kaydı yok.</p>'}
+                                </div>
+
+                                <!-- Items From Alınacaklar Listesi -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Alınacaklar Listesi</h4>
+                                        <span class="text-[10px] bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full dark:text-gray-300">${s.shopping.length} Ürün</span>
+                                    </div>
+                                    ${s.shopping.length > 0 ? `
+                                        <div class="space-y-2">
+                                            ${s.shopping.map(item => `
+                                                <div class="bg-white dark:bg-gray-900 p-3 rounded-2xl flex justify-between items-center shadow-sm border border-gray-50 dark:border-gray-800 ${item.isPurchased ? 'opacity-60' : ''}">
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="w-2 h-2 rounded-full ${item.isPurchased ? 'bg-emerald-500' : 'bg-amber-500'}"></div>
+                                                        <div>
+                                                            <p class="text-sm font-bold dark:text-white ${item.isPurchased ? 'line-through' : ''}">${item.name}</p>
+                                                            <p class="text-[10px] text-gray-500">${item.quantity || ''} ${item.supplier ? `• ${item.supplier}` : ''}</p>
+                                                        </div>
+                                                    </div>
+                                                    <p class="text-xs font-bold text-gray-600 dark:text-gray-400">${item.actualPrice || item.estimatedPrice ? (item.actualPrice || item.estimatedPrice).toLocaleString() + ' ₺' : ''}</p>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : '<p class="text-xs text-gray-400 italic py-2">Bu kategoride ürün yok.</p>'}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function toggleCategoryDetails(cat) {
+            selectedCategory = selectedCategory === cat ? null : cat;
+            renderBudgetDetails();
+        }
+
+        function editCategoryBudget(cat, current) {
+            const newVal = prompt(`${cat} için yeni bütçe tutarı:`, current);
+            if (newVal !== null) {
+                const val = Number(newVal.toString().replace(',', '.'));
+                if (!isNaN(val)) {
+                    data.budget.categories[cat] = val;
+                    data.budget.total = Object.values(data.budget.categories).reduce((sum, v) => sum + v, 0);
+                    saveData();
+                }
+            }
+        }
+
+        function renameCategory(oldName) {
+            const newName = prompt('Yeni kategori ismi:', oldName);
+            if (newName && newName !== oldName) {
+                const amount = data.budget.categories[oldName];
+                data.budget.categories[newName] = amount;
+                delete data.budget.categories[oldName];
+                
+                // Update expenses
+                data.expenses = data.expenses.map(exp => 
+                    exp.category === oldName ? { ...exp, category: newName } : exp
+                );
+                
+                selectedCategory = newName;
+                saveData();
+            }
+        }
+
+        function deleteCategory(catName) {
+            if (confirm(`"${catName}" kategorisini silmek istediğinize emin misiniz?`)) {
+                delete data.budget.categories[catName];
+                data.budget.total = Object.values(data.budget.categories).reduce((sum, v) => sum + v, 0);
+                selectedCategory = null;
+                saveData();
+            }
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('tasks-list');
+            list.innerHTML = data.tasks.length > 0 ? data.tasks.map(t => `
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button onclick="toggleTaskStatus('${t.id}')" class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${t.status === 'completed' ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 dark:border-gray-600'}">
+                            ${t.status === 'completed' ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                        </button>
+                        <div>
+                            <h4 class="font-semibold dark:text-white ${t.status === 'completed' ? 'line-through text-gray-400' : ''}">${t.title}</h4>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-md">${t.category}</span>
+                                <span class="text-xs px-2 py-0.5 rounded-md ${t.priority === 'high' ? 'bg-red-100 text-red-600' : t.priority === 'medium' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}">
+                                    ${t.priority === 'high' ? 'Yüksek' : t.priority === 'medium' ? 'Orta' : 'Düşük'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="editItem('task', '${t.id}')" class="p-2 text-gray-400 hover:text-blue-600"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                        <button onclick="deleteItem('tasks', '${t.id}')" class="p-2 text-gray-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('') : '<div class="text-center py-12 text-gray-400"><i data-lucide="check-square" class="w-16 h-16 mx-auto mb-4 opacity-10"></i><p>Henüz görev eklenmemiş</p></div>';
+            lucide.createIcons();
+        }
+
+        function renderShopping() {
+            const list = document.getElementById('shopping-list');
+            const filtered = hidePurchased ? data.shoppingList.filter(i => !i.isPurchased) : data.shoppingList;
+            
+            list.innerHTML = filtered.length > 0 ? filtered.map(item => `
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <button onclick="toggleShoppingStatus('${item.id}')" class="w-5 h-5 rounded border flex items-center justify-center transition-colors ${item.isPurchased ? 'bg-blue-600 border-blue-600' : 'border-gray-300 dark:border-gray-600'}">
+                                ${item.isPurchased ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                            </button>
+                            <h4 class="font-semibold dark:text-white ${item.isPurchased ? 'line-through text-gray-400' : ''}">${item.name}</h4>
+                        </div>
+                        <span class="text-sm font-bold text-blue-600">${item.actualPrice || item.estimatedPrice} ₺</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span>${item.category || 'Diğer'} • ${item.quantity || ''} • ${item.supplier || 'Tedarikçi Belirtilmedi'}</span>
+                        <div class="flex space-x-2">
+                            <button onclick="editItem('shopping', '${item.id}')" class="p-1 hover:text-blue-600"><i data-lucide="edit-2" class="w-3 h-3"></i></button>
+                            <button onclick="deleteItem('shoppingList', '${item.id}')" class="p-1 hover:text-red-600"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('') : `<div class="text-center py-12 text-gray-400"><i data-lucide="clipboard-list" class="w-16 h-16 mx-auto mb-4 opacity-10"></i><p>${hidePurchased ? 'Alınmayan ürün yok' : 'Alışveriş listesi boş'}</p></div>`;
+            lucide.createIcons();
+        }
+
+        function toggleShoppingFilter() {
+            hidePurchased = !hidePurchased;
+            const btn = document.getElementById('shopping-filter-btn');
+            if (!btn) return;
+            if (hidePurchased) {
+                btn.classList.replace('bg-gray-100', 'bg-blue-100');
+                btn.classList.replace('text-gray-500', 'text-blue-600');
+                btn.innerText = 'Tümünü Göster';
+            } else {
+                btn.classList.replace('bg-blue-100', 'bg-gray-100');
+                btn.classList.replace('text-blue-600', 'text-gray-500');
+                btn.innerText = 'Alınanları Gizle';
+            }
+            renderShopping();
+        }
+
+        function renderExpenses() {
+            const list = document.getElementById('expenses-list');
+            const totalSpent = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('total-spent-display').innerText = totalSpent.toLocaleString() + ' ₺';
+
+            list.innerHTML = data.expenses.length > 0 ? data.expenses.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => `
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <i data-lucide="receipt" class="w-5 h-5 text-red-500"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold dark:text-white">${e.description}</h4>
+                            <p class="text-xs text-gray-500">${e.date} • ${e.category}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-gray-900 dark:text-white">-${e.amount.toLocaleString()} ₺</p>
+                        <button onclick="deleteItem('expenses', '${e.id}')" class="text-xs text-red-500 hover:underline mt-1">Sil</button>
+                    </div>
+                </div>
+            `).join('') : '<div class="text-center py-12 text-gray-400"><i data-lucide="receipt" class="w-16 h-16 mx-auto mb-4 opacity-10"></i><p>Henüz harcama kaydedilmemiş</p></div>';
+            lucide.createIcons();
+        }
+
+        function renderSuppliers() {
+            const list = document.getElementById('suppliers-list');
+            list.innerHTML = data.suppliers.length > 0 ? data.suppliers.map(s => `
+                <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-lg dark:text-white">${s.name}</h4>
+                            <span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-md">${s.serviceType}</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editItem('supplier', '${s.id}')" class="p-2 text-gray-400 hover:text-blue-600"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                            <button onclick="deleteItem('suppliers', '${s.id}')" class="p-2 text-gray-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                    <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <p class="flex items-center"><i data-lucide="phone" class="w-4 h-4 mr-2"></i> ${s.phone}</p>
+                        <p class="flex items-center"><i data-lucide="map-pin" class="w-4 h-4 mr-2"></i> ${s.address}</p>
+                    </div>
+                </div>
+            `).join('') : '<div class="text-center py-12 text-gray-400"><i data-lucide="users" class="w-16 h-16 mx-auto mb-4 opacity-10"></i><p>Tedarikçi listesi boş</p></div>';
+            lucide.createIcons();
+        }
+
+        // --- Item Actions ---
+        function toggleTaskStatus(id) {
+            const task = data.tasks.find(t => t.id === id);
+            task.status = task.status === 'completed' ? 'pending' : 'completed';
+            saveData();
+        }
+
+        function toggleShoppingStatus(id) {
+            const item = data.shoppingList.find(i => i.id === id);
+            item.isPurchased = !item.isPurchased;
+            
+            if (item.isPurchased) {
+                const newExpense = {
+                    id: 'exp-' + Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    amount: item.actualPrice || item.estimatedPrice,
+                    category: item.category || 'Diğer',
+                    description: item.name,
+                    invoiceNo: ''
+                };
+                data.expenses.push(newExpense);
+            }
+            
+            saveData();
+        }
+
+        function deleteItem(collection, id) {
+            if (confirm('Silmek istediğinize emin misiniz?')) {
+                data[collection] = data[collection].filter(item => item.id !== id);
+                saveData();
+            }
+        }
+
+        // --- Modal Logic ---
+        function openModal(type, id = null) {
+            const backdrop = document.getElementById('modal-backdrop');
+            const title = document.getElementById('modal-title');
+            const content = document.getElementById('modal-content');
+            const saveBtn = document.getElementById('modal-save-btn');
+            
+            backdrop.classList.remove('hidden');
+            editingItem = id ? data[type === 'task' ? 'tasks' : type === 'shopping' ? 'shoppingList' : type === 'expense' ? 'expenses' : 'suppliers']?.find(i => i.id === id) : null;
+
+            if (type === 'edit_category') {
+                title.innerText = 'Kategoriyi Düzenle';
+                const currentBudget = data.budget.categories[id];
+                content.innerHTML = `
+                    <form id="modal-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori Adı</label>
+                            <input name="name" value="${id}" required class="w-full p-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl dark:text-white" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Planlanan Bütçe (₺)</label>
+                            <input type="number" name="budget" value="${currentBudget}" required class="w-full p-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl dark:text-white" />
+                        </div>
+                    </form>
+                `;
+                saveBtn.onclick = () => {
+                    const fd = new FormData(document.getElementById('modal-form'));
+                    const newName = fd.get('name');
+                    const newBudget = Number(fd.get('budget'));
+
+                    if (newName) {
+                        if (newName !== id) {
+                            data.budget.categories[newName] = newBudget;
+                            delete data.budget.categories[id];
+                            data.expenses = data.expenses.map(exp => 
+                                exp.category === id ? { ...exp, category: newName } : exp
+                            );
+                            if (selectedCategory === id) selectedCategory = newName;
+                        } else {
+                            data.budget.categories[id] = newBudget;
+                        }
+                        data.budget.total = Object.values(data.budget.categories).reduce((sum, v) => sum + v, 0);
+                        closeModal(); saveData();
+                    }
+                };
+            }
+
+            if (type === 'add_category') {
+                title.innerText = 'Yeni Kategori Ekle';
+                content.innerHTML = `
+                    <form id="modal-form" class="space-y-4">
+                        <div><label class="block text-sm font-medium mb-1">Kategori Adı</label><input name="name" required placeholder="örn: Mutfak Gereçleri" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                        <div><label class="block text-sm font-medium mb-1">Planlanan Bütçe (₺)</label><input type="number" name="amount" value="0" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                    </form>
+                `;
+                saveBtn.onclick = () => {
+                    const fd = new FormData(document.getElementById('modal-form'));
+                    const name = fd.get('name');
+                    const amount = Number(fd.get('amount'));
+                    if (name) {
+                        data.budget.categories[name] = amount;
+                        data.budget.total = Object.values(data.budget.categories).reduce((sum, val) => sum + val, 0);
+                        closeModal(); saveData();
+                    }
+                };
+            }
+
+            if (type === 'task') {
+                title.innerText = editingItem ? 'Görevi Düzenle' : 'Yeni Görev';
+                content.innerHTML = `
+                    <form id="modal-form" class="space-y-4">
+                        <div><label class="block text-sm font-medium mb-1">Görev Başlığı</label><input name="title" value="${editingItem?.title || ''}" required class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">Kategori</label><select name="category" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white">${getCategories().map(c => `<option value="${c}" ${editingItem?.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+                            <div><label class="block text-sm font-medium mb-1">Öncelik</label><select name="priority" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"><option value="low" ${editingItem?.priority === 'low' ? 'selected' : ''}>Düşük</option><option value="medium" ${editingItem?.priority === 'medium' ? 'selected' : ''}>Orta</option><option value="high" ${editingItem?.priority === 'high' ? 'selected' : ''}>Yüksek</option></select></div>
+                        </div>
+                        <div><label class="block text-sm font-medium mb-1">Son Tarih</label><input type="date" name="dueDate" value="${editingItem?.dueDate || ''}" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                    </form>
+                `;
+                saveBtn.onclick = () => {
+                    const fd = new FormData(document.getElementById('modal-form'));
+                    const item = { id: editingItem?.id || Date.now().toString(), title: fd.get('title'), category: fd.get('category'), priority: fd.get('priority'), dueDate: fd.get('dueDate'), status: editingItem?.status || 'pending' };
+                    if (editingItem) data.tasks = data.tasks.map(t => t.id === item.id ? item : t);
+                    else data.tasks.push(item);
+                    closeModal(); saveData();
+                };
+            }
+
+            if (type === 'shopping') {
+                title.innerText = editingItem ? 'Ürünü Düzenle' : 'Yeni Ürün';
+                content.innerHTML = `
+                    <form id="modal-form" class="space-y-4">
+                        <div><label class="block text-sm font-medium mb-1">Ürün Adı</label><input name="name" value="${editingItem?.name || ''}" required class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">Miktar</label><input name="quantity" value="${editingItem?.quantity || ''}" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                            <div><label class="block text-sm font-medium mb-1">Kategori</label><select name="category" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white">${getCategories().map(c => `<option value="${c}" ${editingItem?.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">Tahmini Fiyat (₺)</label><input type="number" name="estimatedPrice" value="${editingItem?.estimatedPrice || ''}" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                            <div><label class="block text-sm font-medium mb-1">Tedarikçi</label><input name="supplier" value="${editingItem?.supplier || ''}" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                        </div>
+                    </form>
+                `;
+                saveBtn.onclick = () => {
+                    const fd = new FormData(document.getElementById('modal-form'));
+                    const item = { id: editingItem?.id || Date.now().toString(), name: fd.get('name'), quantity: fd.get('quantity'), category: fd.get('category'), estimatedPrice: Number(fd.get('estimatedPrice')), supplier: fd.get('supplier'), isPurchased: editingItem?.isPurchased || false };
+                    if (editingItem) data.shoppingList = data.shoppingList.map(i => i.id === item.id ? item : i);
+                    else data.shoppingList.push(item);
+                    closeModal(); saveData();
+                };
+            }
+
+            if (type === 'expense') {
+                title.innerText = 'Harcama Ekle';
+                content.innerHTML = `
+                    <form id="modal-form" class="space-y-4">
+                        <div><label class="block text-sm font-medium mb-1">Açıklama</label><input name="description" required class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">Tutar (₺)</label><input type="number" name="amount" required class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                            <div><label class="block text-sm font-medium mb-1">Kategori</label><select name="category" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl dark:text-white">${getCategories().map(c => `<option value="${c}">${c}</option>`).join('')}</select></div>
+                        </div>
+                        <div><label class="block text-sm font-medium mb-1">Tarih</label><input type="date" name="date" value="${new Date().toISOString().split('T')[0]}" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                    </form>
+                `;
+                saveBtn.onclick = () => {
+                    const fd = new FormData(document.getElementById('modal-form'));
+                    const item = { id: Date.now().toString(), description: fd.get('description'), amount: Number(fd.get('amount')), category: fd.get('category'), date: fd.get('date') };
+                    data.expenses.push(item);
+                    closeModal(); saveData();
+                };
+            }
+
+            if (type === 'supplier') {
+                title.innerText = editingItem ? 'Tedarikçiyi Düzenle' : 'Yeni Tedarikçi';
+                content.innerHTML = `
+                    <form id="modal-form" class="space-y-4">
+                        <div><label class="block text-sm font-medium mb-1">Firma Adı</label><input name="name" value="${editingItem?.name || ''}" required class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">Hizmet Türü</label><input name="serviceType" value="${editingItem?.serviceType || ''}" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                            <div><label class="block text-sm font-medium mb-1">Telefon</label><input name="phone" value="${editingItem?.phone || ''}" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white"></div>
+                        </div>
+                        <div><label class="block text-sm font-medium mb-1">Adres</label><textarea name="address" class="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl dark:text-white h-20">${editingItem?.address || ''}</textarea></div>
+                    </form>
+                `;
+                saveBtn.onclick = () => {
+                    const fd = new FormData(document.getElementById('modal-form'));
+                    const item = { id: editingItem?.id || Date.now().toString(), name: fd.get('name'), serviceType: fd.get('serviceType'), phone: fd.get('phone'), address: fd.get('address') };
+                    if (editingItem) data.suppliers = data.suppliers.map(s => s.id === item.id ? item : s);
+                    else data.suppliers.push(item);
+                    closeModal(); saveData();
+                };
+            }
+
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('modal-backdrop')?.classList.add('hidden');
+            editingItem = null;
+        }
+
+        function editItem(type, id) {
+            openModal(type, id);
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            applyTheme();
+            render();
+        };
+    </script>
+</body>
+</html>
